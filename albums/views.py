@@ -1,7 +1,12 @@
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
+from django.contrib.auth.views import CreateView as AuthCreateView
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import get_user_model
 from .models import Album, Photo
+
+User = get_user_model()
 
 
 class AlbumListView(ListView):
@@ -75,3 +80,12 @@ class PhotoDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def get_success_url(self):
         return reverse('albums:detail', kwargs={'pk': self.get_object().album.pk})
+
+
+class RegisterView(CreateView):
+    form_class = UserCreationForm
+    template_name = 'registration/register.html'
+    success_url = reverse_lazy('login')
+    
+    def form_valid(self, form):
+        return super().form_valid(form)

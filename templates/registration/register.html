@@ -1,0 +1,51 @@
+{% extends 'albums/base.html' %}
+{% block content %}
+<div class="form-panel mx-auto" style="max-width: 520px;">
+  <div class="mb-4 text-center">
+    <p class="text-uppercase text-primary fw-semibold mb-2">Create account</p>
+    <h1 class="h4 mb-2">Join PhotoFlow</h1>
+    <p class="text-muted">Sign up to start building and sharing your photo collections.</p>
+  </div>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label fw-semibold" for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% for error in form.username.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+        {% if form.username.help_text %}
+          <div class="form-text">{{ form.username.help_text|safe }}</div>
+        {% endif %}
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-semibold" for="{{ form.password1.id_for_label }}">Password</label>
+        {{ form.password1 }}
+        {% for error in form.password1.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+        {% if form.password1.help_text %}
+          <div class="form-text">{{ form.password1.help_text|safe }}</div>
+        {% endif %}
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-semibold" for="{{ form.password2.id_for_label }}">Confirm Password</label>
+        {{ form.password2 }}
+        {% for error in form.password2.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+        {% if form.password2.help_text %}
+          <div class="form-text">{{ form.password2.help_text|safe }}</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="form-actions mt-4">
+      <button class="btn btn-primary btn-lg" type="submit">Create Account</button>
+    </div>
+  </form>
+  <div class="text-center mt-3">
+    <p class="text-muted mb-0">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+  </div>
+</div>
+{% endblock %}
