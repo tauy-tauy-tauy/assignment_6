@@ -57,15 +57,22 @@ TEMPLATES = [
 WSGI_APPLICATION = 'photoalbum.wsgi.application'
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
-    DATABASES = {'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+if not DATABASE_URL:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        'DATABASE_URL is required (PostgreSQL). '
+        'Use your Render Postgres Internal/External URL in .env for local dev, '
+        'or the DATABASE_URL Render sets when you link the database to the web service.'
+    )
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+        ssl_require='render.com' in DATABASE_URL,
+    ),
+}
 
 AUTH_PASSWORD_VALIDATORS = []
 
