@@ -2,35 +2,100 @@
 {% block content %}
 <div class="form-panel mx-auto" style="max-width: 720px;">
   <div class="mb-4">
-    <p class="text-uppercase text-primary fw-semibold mb-2">{% if form.image %}Upload Photo{% else %}Create Album{% endif %}</p>
-    <h1 class="h3 mb-2">{% if form.image %}Add a new image to this album{% else %}Create a clean album collection{% endif %}</h1>
+    <p class="text-uppercase text-primary fw-semibold mb-2">{% if is_photo_upload %}Upload Photo{% else %}Create Album{% endif %}</p>
+    <h1 class="h3 mb-2">{% if is_photo_upload %}Add a new image to this album{% else %}Create a clean album collection{% endif %}</h1>
     <p class="text-muted mb-0">Complete the form below to keep your photo library organized with modern visuals.</p>
   </div>
   <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
     <div class="row g-3">
-      {% for field in form %}
+      {% if is_photo_upload %}
         <div class="col-12">
-          <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
-          <div class="form-control-wrap">
-            {{ field }}
+          <label class="form-label fw-semibold">Photo</label>
+          <div class="upload-drop" id="uploadZone" style="cursor: pointer;">
+            <input type="file" id="photo-file-input" name="image" accept="image/*" class="d-none" required>
+            <p class="mb-1"><i class="bi bi-cloud-arrow-up-fill fs-3"></i></p>
+            <p class="mb-1 fw-semibold">Drag & drop your image here</p>
+            <small class="text-muted">or click to choose from your computer</small>
           </div>
-          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-          {% for error in field.errors %}
+          <div id="file-name" class="text-muted small mt-2" style="display:none;">Selected: <span id="selected-name"></span></div>
+          {% for error in form.image.errors %}
+            <div class="text-danger small mt-2">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold" for="{{ form.caption.id_for_label }}">{{ form.caption.label }}</label>
+          {{ form.caption }}
+          {% for error in form.caption.errors %}
             <div class="text-danger small">{{ error }}</div>
           {% endfor %}
         </div>
-      {% endfor %}
+      {% else %}
+        {% for field in form %}
+          <div class="col-12">
+            <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      {% endif %}
     </div>
-    <div class="upload-drop mt-3">
-      <p class="mb-1"><i class="bi bi-cloud-arrow-up-fill fs-3"></i></p>
-      <p class="mb-1 fw-semibold">Drag &amp; drop your image here</p>
-      <small class="text-muted">or click the file field above to choose a photo</small>
-    </div>
-    <div class="form-actions">
+    <div class="form-actions mt-4">
       <button class="btn btn-primary btn-lg" type="submit">Save</button>
       <a class="btn btn-outline-secondary btn-lg" href="javascript:history.back()">Cancel</a>
     </div>
   </form>
 </div>
+<script>
+  const uploadZone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('photo-file-input');
+  const fileName = document.getElementById('file-name');
+  const selectedName = document.getElementById('selected-name');
+  
+  if (uploadZone && fileInput) {
+    uploadZone.addEventListener('click', () => fileInput.click());
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      uploadZone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+      uploadZone.addEventListener(eventName, () => {
+        uploadZone.style.background = 'rgba(79, 70, 229, 0.15)';
+      });
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+      uploadZone.addEventListener(eventName, () => {
+        uploadZone.style.background = '';
+      });
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      fileInput.files = files;
+      updateFileName(files);
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+      updateFileName(e.target.files);
+    });
+    
+    function updateFileName(files) {
+      if (files.length > 0) {
+        selectedName.textContent = files[0].name;
+        fileName.style.display = 'block';
+      }
+    }
+  }
+</script>
 {% endblock %}

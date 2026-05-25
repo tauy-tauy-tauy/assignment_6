@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from cloudinary.models import CloudinaryField
 
 User = get_user_model()
 
@@ -24,7 +23,7 @@ class Album(models.Model):
 
 class Photo(models.Model):
     album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name='photos')
-    image = CloudinaryField('image')
+    image = models.ImageField('image', upload_to='photos/')
     caption = models.CharField(max_length=255, blank=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     uploaded = models.DateTimeField(auto_now_add=True)

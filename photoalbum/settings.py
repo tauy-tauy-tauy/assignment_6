@@ -79,20 +79,34 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Cloudinary
+# Cloudinary (required for photo uploads — set in .env, see .env.example)
 CLOUDINARY = {
     'cloud_name': os.environ.get('CLOUDINARY_CLOUD_NAME'),
     'api_key': os.environ.get('CLOUDINARY_API_KEY'),
     'api_secret': os.environ.get('CLOUDINARY_API_SECRET'),
 }
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': CLOUDINARY['cloud_name'],
-    'API_KEY': CLOUDINARY['api_key'],
-    'API_SECRET': CLOUDINARY['api_secret'],
-}
+_cloudinary_configured = all(CLOUDINARY.values())
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+if _cloudinary_configured:
+    import cloudinary
+    cloudinary.config(
+        cloud_name=CLOUDINARY['cloud_name'],
+        api_key=CLOUDINARY['api_key'],
+        api_secret=CLOUDINARY['api_secret'],
+        secure=True,
+    )
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': CLOUDINARY['cloud_name'],
+        'API_KEY': CLOUDINARY['api_key'],
+        'API_SECRET': CLOUDINARY['api_secret'],
+    }
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'

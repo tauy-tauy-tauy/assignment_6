@@ -1,9 +1,11 @@
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
 from .models import Album, Photo
+from .forms import AlbumForm, PhotoForm
 
 User = get_user_model()
 
@@ -18,6 +20,14 @@ class AlbumDetailView(DetailView):
     model = Album
     template_name = 'albums/album_detail.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        album = self.get_object()
+        context['is_album_admin'] = user.is_authenticated and user.groups.filter(name='album_admin').exists()
+        context['can_edit_album'] = user == album.owner or context['is_album_admin']
+        return context
+
 
 class OwnerOrGroupRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -31,7 +41,7 @@ class OwnerOrGroupRequiredMixin(UserPassesTestMixin):
 
 class AlbumCreateView(LoginRequiredMixin, CreateView):
     model = Album
-    fields = ['title', 'description']
+    form_class = AlbumForm
     template_name = 'albums/album_form.html'
 
     def form_valid(self, form):
@@ -41,7 +51,7 @@ class AlbumCreateView(LoginRequiredMixin, CreateView):
 
 class AlbumUpdateView(LoginRequiredMixin, OwnerOrGroupRequiredMixin, UpdateView):
     model = Album
-    fields = ['title', 'description']
+    form_class = AlbumForm
     template_name = 'albums/album_form.html'
 
 
@@ -53,11 +63,11 @@ class AlbumDeleteView(LoginRequiredMixin, OwnerOrGroupRequiredMixin, DeleteView)
 
 class PhotoCreateView(LoginRequiredMixin, CreateView):
     model = Photo
-    fields = ['image', 'caption']
+    form_class = PhotoForm
     template_name = 'albums/album_form.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.album = Album.objects.get(pk=kwargs['album_pk'])
+        self.album = get_object_or_404(Album, pk=kwargs['album_pk'])
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -67,6 +77,12 @@ class PhotoCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse('albums:detail', kwargs={'pk': self.album.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['album'] = self.album
+        context['is_photo_upload'] = True
+        return context
 
 
 class PhotoDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
