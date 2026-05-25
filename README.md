@@ -26,7 +26,8 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ```
-   For local dev, use the **External Database URL** from your Render PostgreSQL instance (Dashboard → your database → Connections).
+   For local dev, use the **External Database URL** from your Render PostgreSQL instance (Dashboard → your database → Connections).  
+   Photo uploads require valid Cloudinary credentials (free account at https://cloudinary.com).
 
 3. Run migrations and create superuser:
 ```bash

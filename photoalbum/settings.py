@@ -86,34 +86,43 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Cloudinary (required for photo uploads — set in .env, see .env.example)
+# Cloudinary (required — all photo uploads are stored on Cloudinary)
 CLOUDINARY = {
     'cloud_name': os.environ.get('CLOUDINARY_CLOUD_NAME'),
     'api_key': os.environ.get('CLOUDINARY_API_KEY'),
     'api_secret': os.environ.get('CLOUDINARY_API_SECRET'),
 }
 
-_cloudinary_configured = all(CLOUDINARY.values())
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-if _cloudinary_configured:
-    import cloudinary
-    cloudinary.config(
-        cloud_name=CLOUDINARY['cloud_name'],
-        api_key=CLOUDINARY['api_key'],
-        api_secret=CLOUDINARY['api_secret'],
-        secure=True,
+_missing_cloudinary = [
+    name for name, value in (
+        ('CLOUDINARY_CLOUD_NAME', CLOUDINARY['cloud_name']),
+        ('CLOUDINARY_API_KEY', CLOUDINARY['api_key']),
+        ('CLOUDINARY_API_SECRET', CLOUDINARY['api_secret']),
+    ) if not value
+]
+if _missing_cloudinary:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        'Cloudinary is required for photo uploads. Set in .env: '
+        + ', '.join(_missing_cloudinary)
+        + ' (https://console.cloudinary.com/ → Dashboard).'
     )
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': CLOUDINARY['cloud_name'],
-        'API_KEY': CLOUDINARY['api_key'],
-        'API_SECRET': CLOUDINARY['api_secret'],
-    }
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-else:
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+import cloudinary
+cloudinary.config(
+    cloud_name=CLOUDINARY['cloud_name'],
+    api_key=CLOUDINARY['api_key'],
+    api_secret=CLOUDINARY['api_secret'],
+    secure=True,
+)
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': CLOUDINARY['cloud_name'],
+    'API_KEY': CLOUDINARY['api_key'],
+    'API_SECRET': CLOUDINARY['api_secret'],
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
