@@ -1,9 +1,28 @@
 {% extends 'albums/base.html' %}
 {% block content %}
-<h1>Login</h1>
-<form method="post">{% csrf_token %}
-  {{ form.as_p }}
-  <button class="btn btn-primary">Login</button>
-  <input type="hidden" name="next" value="{{ next }}">
-</form>
+<div class="form-panel mx-auto" style="max-width: 520px;">
+  <div class="mb-4 text-center">
+    <p class="text-uppercase text-primary fw-semibold mb-2">Welcome back</p>
+    <h1 class="h4 mb-2">Sign in to your account</h1>
+    <p class="text-muted">Access your albums and manage photos with a clean, modern interface.</p>
+  </div>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      {% for field in form %}
+        <div class="col-12">
+          <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="form-actions mt-4">
+      <button class="btn btn-primary btn-lg" type="submit">Login</button>
+    </div>
+    <input type="hidden" name="next" value="{{ next }}">
+  </form>
+</div>
 {% endblock %}

@@ -1,23 +1,44 @@
 {% extends 'albums/base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1>Albums</h1>
-  {% if user.is_authenticated %}
-    <a class="btn btn-primary" href="{% url 'albums:create' %}">New Album</a>
-  {% endif %}
-</div>
-<div class="row">
-  {% for album in albums %}
-    <div class="col-md-4">
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5 class="card-title"><a href="{% url 'albums:detail' album.pk %}">{{ album.title }}</a></h5>
-          <p class="card-text">{{ album.description|truncatewords:20 }}</p>
-        </div>
-      </div>
+<section class="hero mb-4">
+  <div class="row align-items-center gx-4">
+    <div class="col-lg-7">
+      <p class="text-uppercase text-primary fw-bold mb-2">Modern gallery</p>
+      <h1 class="display-6 mb-3">Browse your albums in a beautiful, minimalist layout.</h1>
+      <p class="text-muted">Organize photos by album, preview images quickly, and keep your collection clean and responsive across desktop and mobile.</p>
     </div>
+    <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
+      {% if user.is_authenticated %}
+        <a class="btn btn-primary btn-lg" href="{% url 'albums:create' %}"><i class="bi bi-plus-lg me-2"></i>New Album</a>
+      {% else %}
+        <a class="btn btn-primary btn-lg" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right me-2"></i>Login to begin</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+<div class="section-heading">
+  <div>
+    <h1>Albums</h1>
+    <p>Explore your collections in a clean card grid.</p>
+  </div>
+  <div class="text-muted">Total albums: {{ albums.count }}</div>
+</div>
+<div class="gallery-grid">
+  {% for album in albums %}
+    <a href="{% url 'albums:detail' album.pk %}" class="album-card text-decoration-none text-reset">
+      <img src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=800&q=60" alt="{{ album.title }}" class="album-thumb">
+      <div class="album-meta">
+        <h5>{{ album.title }}</h5>
+        <p>{{ album.description|truncatewords:18 }}</p>
+        <div class="meta-text">Created by {{ album.owner }} • {{ album.created|date:'M d, Y' }}</div>
+      </div>
+    </a>
   {% empty %}
-    <p>No albums yet.</p>
+    <div class="album-card p-5 text-center">
+      <h5 class="mb-1">No albums yet</h5>
+      <p class="text-muted mb-3">Create a new album to start organizing your photos.</p>
+      <a class="btn btn-primary" href="{% url 'albums:create' %}">Create Album</a>
+    </div>
   {% endfor %}
 </div>
 {% endblock %}
