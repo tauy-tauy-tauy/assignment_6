@@ -5,7 +5,7 @@ from .models import Album, Photo
 class AlbumForm(forms.ModelForm):
     class Meta:
         model = Album
-        fields = ['title', 'description']
+        fields = ['title', 'description', 'is_public']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -16,6 +16,10 @@ class AlbumForm(forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Describe this album...',
             }),
+            'is_public': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'is_public': 'Public album (visible to everyone, read-only for non-owners)',
         }
 
 

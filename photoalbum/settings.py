@@ -125,6 +125,6 @@ CLOUDINARY_STORAGE = {
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'  # album list (see albums.urls + root redirect)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -1,42 +1,80 @@
-from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy, reverse
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import get_user_model
-from .models import Album, Photo
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import get_object_or_404
+from django.urls import reverse, reverse_lazy
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+
 from .forms import AlbumForm, PhotoForm
+from .models import Album, Photo
+from .permissions import (
+    can_manage_album,
+    can_manage_photo,
+    get_deletable_photo_ids,
+    get_manageable_albums_queryset,
+    get_manageable_photos_queryset,
+    get_viewable_albums_queryset,
+    is_album_admin,
+)
 
-User = get_user_model()
 
+class AlbumPermissionContextMixin:
+    """Expose RBAC flags to templates (no permission logic in templates)."""
 
-class AlbumListView(ListView):
-    model = Album
-    template_name = 'albums/album_list.html'
-    context_object_name = 'albums'
-
-
-class AlbumDetailView(DetailView):
-    model = Album
-    template_name = 'albums/album_detail.html'
+    def get_album_for_permissions(self):
+        return getattr(self, 'album', None) or self.get_object()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        album = self.get_object()
-        context['is_album_admin'] = user.is_authenticated and user.groups.filter(name='album_admin').exists()
-        context['can_edit_album'] = user == album.owner or context['is_album_admin']
+        album = self.get_album_for_permissions()
+
+        context['is_album_admin'] = is_album_admin(user)
+        if album is not None:
+            context['can_edit_album'] = can_manage_album(user, album)
+            context['can_add_photo'] = can_manage_album(user, album)
+            context['can_view_album'] = True
+            context['deletable_photo_ids'] = get_deletable_photo_ids(user, album)
+
         return context
 
 
-class OwnerOrGroupRequiredMixin(UserPassesTestMixin):
+class ViewableAlbumQuerysetMixin:
+    def get_queryset(self):
+        return get_viewable_albums_queryset(self.request.user)
+
+
+class ManageableAlbumQuerysetMixin:
+    def get_queryset(self):
+        return get_manageable_albums_queryset(self.request.user)
+
+
+class ManageablePhotoQuerysetMixin:
+    def get_queryset(self):
+        return get_manageable_photos_queryset(self.request.user)
+
+
+class AlbumOwnerOrAdminMixin(UserPassesTestMixin):
     def test_func(self):
-        obj = getattr(self, 'object', None)
-        if obj is None and hasattr(self, 'get_object'):
-            obj = self.get_object()
-        if obj is None:
-            return self.request.user.is_authenticated
-        return (obj.owner == self.request.user) or self.request.user.groups.filter(name='album_admin').exists()
+        album = self.get_object()
+        return can_manage_album(self.request.user, album)
+
+
+class AlbumListView(ViewableAlbumQuerysetMixin, ListView):
+    model = Album
+    template_name = 'albums/album_list.html'
+    context_object_name = 'albums'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context['is_album_admin'] = is_album_admin(user)
+        context['is_authenticated_user'] = user.is_authenticated
+        return context
+
+
+class AlbumDetailView(AlbumPermissionContextMixin, ViewableAlbumQuerysetMixin, DetailView):
+    model = Album
+    template_name = 'albums/album_detail.html'
 
 
 class AlbumCreateView(LoginRequiredMixin, CreateView):
@@ -49,25 +87,38 @@ class AlbumCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class AlbumUpdateView(LoginRequiredMixin, OwnerOrGroupRequiredMixin, UpdateView):
+class AlbumUpdateView(
+    LoginRequiredMixin,
+    AlbumOwnerOrAdminMixin,
+    ManageableAlbumQuerysetMixin,
+    UpdateView,
+):
     model = Album
     form_class = AlbumForm
     template_name = 'albums/album_form.html'
 
 
-class AlbumDeleteView(LoginRequiredMixin, OwnerOrGroupRequiredMixin, DeleteView):
+class AlbumDeleteView(
+    LoginRequiredMixin,
+    AlbumOwnerOrAdminMixin,
+    ManageableAlbumQuerysetMixin,
+    DeleteView,
+):
     model = Album
     template_name = 'albums/confirm_delete.html'
     success_url = reverse_lazy('albums:list')
 
 
-class PhotoCreateView(LoginRequiredMixin, CreateView):
+class PhotoCreateView(LoginRequiredMixin, AlbumPermissionContextMixin, CreateView):
     model = Photo
     form_class = PhotoForm
     template_name = 'albums/album_form.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.album = get_object_or_404(Album, pk=kwargs['album_pk'])
+        self.album = get_object_or_404(
+            get_manageable_albums_queryset(request.user),
+            pk=kwargs['album_pk'],
+        )
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -80,18 +131,24 @@ class PhotoCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['album'] = self.album
         context['is_photo_upload'] = True
         return context
 
+    def get_album_for_permissions(self):
+        return self.album
 
-class PhotoDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+
+class PhotoDeleteView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    ManageablePhotoQuerysetMixin,
+    DeleteView,
+):
     model = Photo
     template_name = 'albums/confirm_delete.html'
 
     def test_func(self):
-        photo = self.get_object()
-        return (photo.uploaded_by == self.request.user) or self.request.user.groups.filter(name='album_admin').exists()
+        return can_manage_photo(self.request.user, self.get_object())
 
     def get_success_url(self):
         return reverse('albums:detail', kwargs={'pk': self.get_object().album.pk})
@@ -101,6 +158,3 @@ class RegisterView(CreateView):
     form_class = UserCreationForm
     template_name = 'registration/register.html'
     success_url = reverse_lazy('login')
-    
-    def form_valid(self, form):
-        return super().form_valid(form)

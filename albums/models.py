@@ -10,6 +10,10 @@ class Album(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='albums')
+    is_public = models.BooleanField(
+        default=False,
+        help_text='Allow guests and other users to view this album (read-only).',
+    )
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:

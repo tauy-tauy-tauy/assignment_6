@@ -31,7 +31,10 @@
           <div class="d-flex align-items-center gap-2">
             {% if user.is_authenticated %}
               <a class="btn btn-outline-primary btn-sm" href="{% url 'albums:create' %}"><i class="bi bi-plus-lg me-1"></i>Create Album</a>
-              <a class="btn btn-primary btn-sm" href="{% url 'logout' %}">Logout</a>
+              <form method="post" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-sm">Logout</button>
+              </form>
             {% else %}
               <a class="btn btn-primary btn-sm" href="{% url 'login' %}">Login</a>
             {% endif %}

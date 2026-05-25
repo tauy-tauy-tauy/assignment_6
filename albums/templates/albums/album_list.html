@@ -5,7 +5,7 @@
     <div class="col-lg-7">
       <p class="text-uppercase text-primary fw-bold mb-2">Modern gallery</p>
       <h1 class="display-6 mb-3">Browse your albums in a beautiful, minimalist layout.</h1>
-      <p class="text-muted">Organize photos by album, preview images quickly, and keep your collection clean and responsive across desktop and mobile.</p>
+      <p class="text-muted">{% if is_authenticated_user %}Manage your albums or browse public collections.{% else %}Browse public albums. Log in to create and manage your own.{% endif %}</p>
     </div>
     <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
       {% if user.is_authenticated %}
@@ -19,7 +19,7 @@
 <div class="section-heading">
   <div>
     <h1>Albums</h1>
-    <p>Explore your collections in a clean card grid.</p>
+    <p>{% if is_album_admin %}All albums (administrator view).{% elif is_authenticated_user %}Your albums and public albums.{% else %}Public albums only.{% endif %}</p>
   </div>
   <div class="text-muted">Total albums: {{ albums.count }}</div>
 </div>
@@ -30,14 +30,18 @@
       <div class="album-meta">
         <h5>{{ album.title }}</h5>
         <p>{{ album.description|truncatewords:18 }}</p>
-        <div class="meta-text">Created by {{ album.owner }} • {{ album.created|date:'M d, Y' }}</div>
+        <div class="meta-text">Created by {{ album.owner }} • {{ album.created|date:'M d, Y' }}{% if album.is_public %} • Public{% endif %}</div>
       </div>
     </a>
   {% empty %}
     <div class="album-card p-5 text-center">
-      <h5 class="mb-1">No albums yet</h5>
-      <p class="text-muted mb-3">Create a new album to start organizing your photos.</p>
-      <a class="btn btn-primary" href="{% url 'albums:create' %}">Create Album</a>
+      <h5 class="mb-1">No albums to show</h5>
+      <p class="text-muted mb-3">{% if is_authenticated_user %}Create a new album to start organizing your photos.{% else %}Log in to create albums, or check back for public albums.{% endif %}</p>
+      {% if is_authenticated_user %}
+        <a class="btn btn-primary" href="{% url 'albums:create' %}">Create Album</a>
+      {% else %}
+        <a class="btn btn-primary" href="{% url 'login' %}">Login</a>
+      {% endif %}
     </div>
   {% endfor %}
 </div>

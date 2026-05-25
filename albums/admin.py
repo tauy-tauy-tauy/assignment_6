@@ -4,7 +4,8 @@ from .models import Album, Photo
 
 @admin.register(Album)
 class AlbumAdmin(admin.ModelAdmin):
-    list_display = ('title', 'owner', 'created')
+    list_display = ('title', 'owner', 'is_public', 'created')
+    list_filter = ('is_public',)
 
 
 @admin.register(Photo)

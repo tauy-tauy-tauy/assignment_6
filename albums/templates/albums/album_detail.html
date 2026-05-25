@@ -5,14 +5,14 @@
     <p class="text-uppercase text-primary fw-bold mb-2">Album</p>
     <h1>{{ object.title }}</h1>
     <p class="text-muted">{{ object.description }}</p>
-    <div class="text-muted">Created by {{ object.owner }} • {{ object.created|date:'M d, Y' }}</div>
+    <div class="text-muted">Created by {{ object.owner }} • {{ object.created|date:'M d, Y' }}{% if object.is_public %} • <span class="badge text-bg-primary">Public</span>{% endif %}</div>
   </div>
   <div class="d-flex flex-wrap gap-2">
     {% if can_edit_album %}
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'albums:update' object.pk %}"><i class="bi bi-pencil-fill me-1"></i>Edit</a>
       <a class="btn btn-outline-danger btn-sm" href="{% url 'albums:delete' object.pk %}"><i class="bi bi-trash-fill me-1"></i>Delete</a>
     {% endif %}
-    {% if user.is_authenticated %}
+    {% if can_add_photo %}
       <a class="btn btn-primary btn-sm" href="{% url 'albums:photo_add' object.pk %}"><i class="bi bi-upload me-1"></i>Add Photo</a>
     {% endif %}
   </div>
@@ -40,7 +40,7 @@
             <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Photo preview' }}">
           </div>
           <div class="modal-footer border-0">
-            {% if photo.uploaded_by == user or is_album_admin %}
+            {% if photo.pk in deletable_photo_ids %}
               <a class="btn btn-danger btn-sm" href="{% url 'albums:photo_delete' photo.pk %}"><i class="bi bi-trash-fill me-1"></i>Delete Photo</a>
             {% endif %}
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
@@ -52,7 +52,7 @@
     <div class="album-card p-5 text-center">
       <h5 class="mb-2">No photos yet</h5>
       <p class="text-muted mb-3">Add your first photo to this album.</p>
-      {% if user.is_authenticated %}
+      {% if can_add_photo %}
         <a class="btn btn-primary" href="{% url 'albums:photo_add' object.pk %}">Upload Photo</a>
       {% endif %}
     </div>

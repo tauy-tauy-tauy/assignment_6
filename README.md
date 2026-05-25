@@ -4,7 +4,7 @@ This project implements a production-ready Photo Album Management system using D
 
 Key features:
 - Class-Based Views for CRUD operations
-- Role-Based Access Control via Django Groups (`album_admin`)
+- Role-Based Access Control: users manage only their own albums/photos; `album_admin` group manages all; guests may view public albums (`is_public`)
 - Cloudinary-backed media storage (no local media in production)
 - Deployable to Render (Procfile included)
 
