@@ -1,0 +1,9 @@
+{% extends 'albums/base.html' %}
+{% block content %}
+<h1>Confirm Delete</h1>
+<p>Are you sure you want to delete "{{ object }}"?</p>
+<form method="post">{% csrf_token %}
+  <button class="btn btn-danger" type="submit">Yes, delete</button>
+  <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
